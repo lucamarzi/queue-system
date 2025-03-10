@@ -159,6 +159,10 @@ class TicketService
             $oldStatus = $ticket->status;
             $ticket->status = Ticket::STATUS_IN_PROGRESS;
             $ticket->save();
+
+            // Aggiorna lo stato della postazione a BUSY
+            $station->status = Station::STATUS_BUSY;
+            $station->save();
             
             // Crea il log
             $this->createTicketLog(
@@ -176,7 +180,29 @@ class TicketService
             throw $e;
         }
     }
-    
+ 
+     /**
+     * Cambia lo stato di un ticket in "in_progress" quando la postazione diventa occupata
+     */
+    public function setTicketInProgressForStation(Station $station): bool
+    {
+        // Cerca il ticket chiamato dalla postazione
+        $ticket = Ticket::where('status', Ticket::STATUS_CALLED)
+            ->whereHas('logs', function ($query) use ($station) {
+                $query->where('station_id', $station->id)
+                      ->where('status_to', Ticket::STATUS_CALLED)
+                      ->orderBy('created_at', 'desc');
+            })
+            ->first();
+            
+        if (!$ticket) {
+            return false;
+        }
+        
+        // Usa il metodo startTicketService per cambiare lo stato
+        return $this->startTicketService($ticket, $station);
+    }   
+
     /**
      * Completa un ticket
      */
@@ -194,6 +220,10 @@ class TicketService
             $ticket->status = Ticket::STATUS_COMPLETED;
             $ticket->completed_at = now();
             $ticket->save();
+
+            // Reimposta lo stato della postazione ad ACTIVE
+            $station->status = Station::STATUS_ACTIVE;
+            $station->save();
             
             // Crea il log
             $this->createTicketLog(
@@ -244,6 +274,10 @@ class TicketService
             $ticket->current_service_id = $service->id;
             $ticket->status = Ticket::STATUS_WAITING;
             $ticket->save();
+
+            // Reimposta lo stato della postazione ad ACTIVE
+            $station->status = Station::STATUS_ACTIVE;
+            $station->save();
             
             // Crea il log
             $this->createTicketLog(
@@ -282,6 +316,10 @@ class TicketService
             $ticket->status = Ticket::STATUS_ABANDONED;
             $ticket->completed_at = now(); // Impostiamo completed_at per conteggiarlo nelle statistiche
             $ticket->save();
+
+            // Reimposta lo stato della postazione ad ACTIVE
+            $station->status = Station::STATUS_ACTIVE;
+            $station->save();
             
             // Se il ticket era in attesa, decrementa il contatore di attesa del servizio
             if ($oldStatus === Ticket::STATUS_WAITING) {

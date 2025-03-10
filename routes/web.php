@@ -45,5 +45,7 @@ Route::middleware([CheckStationAccess::class])->prefix('operator')->name('operat
     Route::post('/transfer-ticket', [OperatorController::class, 'transferTicket'])->name('transfer-ticket');
     Route::post('/abandon-ticket', [OperatorController::class, 'abandonTicket'])->name('abandon-ticket');
     Route::post('/recall-ticket', [OperatorController::class, 'recallTicket'])->name('recall-ticket');
+    Route::get('/check-waiting-tickets', [OperatorController::class, 'checkWaitingTickets'])->name('check-waiting-tickets');
+    Route::get('/get-waiting-tickets', [OperatorController::class, 'getWaitingTickets'])->name('get-waiting-tickets');
 });
 

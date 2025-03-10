@@ -38,6 +38,15 @@ class ServiceResource extends Resource
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535)
                     ->label('Descrizione'),
+                Forms\Components\ColorPicker::make('color_code')
+                    ->label('Colore')
+                    ->helperText('Scegli un colore per questo servizio')
+                    ->default('#3B82F6'), // Blue-500 di default    
+                Forms\Components\TextInput::make('icon_class')
+                    ->label('Icona Font Awesome')
+                    ->helperText('Inserisci la classe dell\'icona Font Awesome (es: fa-users, fa-building, ecc.)')
+                    ->default('fa-ticket')
+                    ->suffixIcon('heroicon-o-information-circle'),
                 Forms\Components\Toggle::make('is_reception')
                     ->required()
                     ->label('Servizio Reception'),
@@ -53,6 +62,11 @@ class ServiceResource extends Resource
                     ->label('Nome'),
                 Tables\Columns\TextColumn::make('ticket_prefix')
                     ->label('Prefisso'),
+                Tables\Columns\ColorColumn::make('color_code')
+                    ->label('Colore'),    
+                    Tables\Columns\ViewColumn::make('icon_class')
+                    ->label('Icona')
+                    ->view('filament.tables.columns.icon-preview'),
                     Tables\Columns\IconColumn::make('is_reception')
                     ->boolean()
                     ->label('Reception'),

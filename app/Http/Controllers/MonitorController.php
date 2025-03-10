@@ -63,9 +63,9 @@ class MonitorController extends Controller
             
             // Recupera tutti i ticket chiamati per tutte le reception
             $calledTickets = Ticket::whereIn('current_service_id', $receptionServiceIds)
-                ->whereIn('status', [Ticket::STATUS_CALLED, Ticket::STATUS_IN_PROGRESS])
+                ->whereIn('status', [Ticket::STATUS_CALLED],)
                 ->with(['logs' => function($query) {
-                    $query->whereIn('status_to', [Ticket::STATUS_CALLED, Ticket::STATUS_IN_PROGRESS])
+                    $query->whereIn('status_to', [Ticket::STATUS_CALLED])
                         ->with('station')
                         ->orderBy('created_at', 'desc')
                         ->limit(1);
@@ -109,9 +109,9 @@ class MonitorController extends Controller
             
             foreach ($services as $service) {
                 $calledTickets = Ticket::where('current_service_id', $service->id)
-                    ->whereIn('status', [Ticket::STATUS_CALLED, Ticket::STATUS_IN_PROGRESS])
+                    ->whereIn('status', [Ticket::STATUS_CALLED])
                     ->with(['logs' => function($query) {
-                        $query->whereIn('status_to', [Ticket::STATUS_CALLED, Ticket::STATUS_IN_PROGRESS])
+                        $query->whereIn('status_to', [Ticket::STATUS_CALLED])
                             ->with('station')
                             ->orderBy('created_at', 'desc')
                             ->limit(1);

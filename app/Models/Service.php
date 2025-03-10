@@ -14,6 +14,8 @@ class Service extends Model
     protected $fillable = [
         'name',
         'description',
+        'color_code', 
+        'icon_class',  
         'is_reception',
         'ticket_prefix',
         'waiting_count'
@@ -52,5 +54,21 @@ class Service extends Model
             ->where('status', Ticket::STATUS_WAITING)
             ->orderBy('created_at')
             ->first();
+    }
+
+    /**
+     * Restituisce un colore predefinito se non è stato impostato
+     */
+    public function getColorAttribute(): string
+    {
+        return $this->color_code ?? '#3B82F6'; // Default è blue-500 di Tailwind
+    }
+    
+    /**
+     * Restituisce un'icona predefinita se non è stata impostata
+     */
+    public function getIconAttribute(): string
+    {
+        return $this->icon_class ?? 'fa-ticket'; // Default è un'icona del ticket
     }
 }

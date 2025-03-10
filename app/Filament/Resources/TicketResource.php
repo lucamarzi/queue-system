@@ -122,7 +122,7 @@ class TicketResource extends Resource
                     ->options([
                         'waiting' => 'In attesa',
                         'called' => 'Chiamato',
-                        'in_progress' => 'In servizio',
+                        'in_progress' => 'In postazione',
                         'completed' => 'Completato',
                         'abandoned' => 'Abbandonato',
                     ])

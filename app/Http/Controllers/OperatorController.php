@@ -29,12 +29,12 @@ class OperatorController extends Controller
         $currentTicket = null;
         $waitingTickets = [];
         
-        // Se la postazione è attiva, ottieni il ticket corrente
+        // Se la postazione è attiva o occupata, ottieni il ticket chiamato
         if ($station->isActive()) {
-            $currentTicket = Ticket::where('status', Ticket::STATUS_IN_PROGRESS)
+            $currentTicket = Ticket::where('status', Ticket::STATUS_CALLED)
                 ->whereHas('logs', function ($query) use ($station) {
                     $query->where('station_id', $station->id)
-                          ->where('status_to', Ticket::STATUS_IN_PROGRESS)
+                          ->where('status_to', Ticket::STATUS_CALLED)
                           ->orderBy('created_at', 'desc');
                 })
                 ->first();
@@ -50,17 +50,32 @@ class OperatorController extends Controller
                     ->first();
             }
         }
+
+        //Se la postazione è occupata ottinei il ticket corrente
+        if ($station->isBusy()) {
+            $currentTicket = Ticket::where('status', Ticket::STATUS_IN_PROGRESS)
+                ->whereHas('logs', function ($query) use ($station) {
+                    $query->where('station_id', $station->id)
+                          ->where('status_to', Ticket::STATUS_IN_PROGRESS)
+                          ->orderBy('created_at', 'desc');
+                })
+                ->first();
+        }
         
         // Ottieni i ticket in attesa per il servizio
         if ($service) {
             $waitingTickets = $this->ticketService->getWaitingTickets($service);
         }
+
+        // Ottieni tutti i servizi per il trasferimento (sia per reception che per altri servizi)
+        $transferServices = Service::where('id', '!=', $service->id)->get();
         
         return view('operator.dashboard', [
             'station' => $station,
             'service' => $service,
             'currentTicket' => $currentTicket,
             'waitingTickets' => $waitingTickets,
+            'transferServices' => $transferServices,
         ]);
     }
     
@@ -70,7 +85,7 @@ class OperatorController extends Controller
     public function setStationStatus(Request $request)
     {
         $request->validate([
-            'status' => 'required|in:active,paused,closed',
+            'status' => 'required|in:active,busy,paused,closed',
         ]);
         
         // Ottiene la postazione dalla request (impostata dal middleware)
@@ -95,6 +110,11 @@ class OperatorController extends Controller
         if ($newStatus === Station::STATUS_ACTIVE && $oldStatus !== Station::STATUS_ACTIVE) {
             $this->ticketService->assignNextTicketToStation($station);
         }
+
+        // Se la postazione diventa occupata, imposta il ticket corrente come "in_progress"
+        if ($newStatus === Station::STATUS_BUSY && $oldStatus !== Station::STATUS_BUSY) {
+            $this->setCurrentTicketInProgress($station);
+        }
         
         return response()->json([
             'success' => true, 
@@ -103,6 +123,25 @@ class OperatorController extends Controller
         ]);
     }
     
+    /**
+     * Imposta il ticket corrente come "in_progress"
+     */
+    private function setCurrentTicketInProgress(Station $station)
+    {
+        // Trova il ticket chiamato per questa postazione
+        $currentTicket = Ticket::where('status', Ticket::STATUS_CALLED)
+            ->whereHas('logs', function ($query) use ($station) {
+                $query->where('station_id', $station->id)
+                    ->where('status_to', Ticket::STATUS_CALLED)
+                    ->orderBy('created_at', 'desc');
+            })
+            ->first();
+            
+        if ($currentTicket) {
+            $this->ticketService->startTicketService($currentTicket, $station);
+        }
+    }
+
     /**
      * Chiama il prossimo ticket
      */
@@ -172,6 +211,10 @@ class OperatorController extends Controller
         if (!$result) {
             return response()->json(['error' => 'Impossibile aggiornare lo stato del ticket'], 500);
         }
+
+        // Imposta la postazione come occupata
+        $station->status = Station::STATUS_BUSY;
+        $station->save();
         
         return response()->json([
             'success' => true,
@@ -314,6 +357,71 @@ class OperatorController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Ticket contrassegnato come abbandonato'
+        ]);
+    }
+
+    public function checkWaitingTickets(Request $request)
+    {
+        // Ottiene la postazione dalla request (impostata dal middleware)
+        $station = $request->attributes->get('station');
+        
+        if (!$station) {
+            return response()->json(['error' => 'Nessuna postazione associata a questo operatore'], 404);
+        }
+        
+        $service = $station->service;
+        
+        if (!$service) {
+            return response()->json(['error' => 'Nessun servizio associato a questa postazione'], 404);
+        }
+        
+        // Controlla se ci sono ticket in attesa
+        $waitingTicketsCount = Ticket::where('current_service_id', $service->id)
+            ->where('status', Ticket::STATUS_WAITING)
+            ->count();
+        
+        return response()->json([
+            'success' => true,
+            'hasWaitingTickets' => $waitingTicketsCount > 0,
+            'waitingCount' => $waitingTicketsCount
+        ]);
+    }
+
+    /**
+     * Restituisce la lista aggiornata dei ticket in attesa per il servizio della postazione
+     */
+    public function getWaitingTickets(Request $request)
+    {
+        // Ottiene la postazione dalla request (impostata dal middleware)
+        $station = $request->attributes->get('station');
+        
+        if (!$station) {
+            return response()->json(['error' => 'Nessuna postazione associata a questo operatore'], 404);
+        }
+        
+        $service = $station->service;
+        
+        if (!$service) {
+            return response()->json(['error' => 'Nessun servizio associato a questa postazione'], 404);
+        }
+        
+        // Ottiene i ticket in attesa
+        $waitingTickets = $this->ticketService->getWaitingTickets($service);
+        
+        // Formatta i ticket per il frontend
+        $formattedTickets = $waitingTickets->map(function($ticket) {
+            return [
+                'id' => $ticket->id,
+                'ticket_number' => $ticket->ticket_number,
+                'type' => $ticket->type,
+                'created_at_diff' => $ticket->created_at->diffForHumans(),
+                'created_at' => $ticket->created_at->format('Y-m-d H:i:s')
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'tickets' => $formattedTickets
         ]);
     }
 }

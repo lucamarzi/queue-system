@@ -33,10 +33,10 @@
     </div>
     
     <script>
-        // Reindirizza automaticamente al menu principale dopo 15 secondi
+        // Reindirizza automaticamente al menu principale dopo 5 secondi
         setTimeout(function() {
             window.location.href = "{{ route('totem.index') }}";
-        }, 15000);
+        }, 5000);
         
         // Stampa automaticamente il ticket
         window.onload = function() {
