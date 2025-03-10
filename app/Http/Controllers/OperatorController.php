@@ -250,10 +250,6 @@ class OperatorController extends Controller
         $ticket = Ticket::findOrFail($ticketId);
         $service = Service::findOrFail($serviceId);
         
-        // Verifica che il servizio di destinazione non sia una reception
-        if ($service->is_reception) {
-            return response()->json(['error' => 'Non è possibile trasferire un ticket ad una reception'], 400);
-        }
         
         // Verifica che il ticket sia effettivamente in gestione da questa postazione
         $latestLog = $ticket->logs()

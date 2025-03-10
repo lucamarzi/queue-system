@@ -24,6 +24,10 @@
                             {{ $station->status === 'active' ? 'disabled' : '' }}>
                         Attiva
                     </button>
+                    <button id="btn-busy" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md"
+                            {{ $station->status === 'busy' ? 'disabled' : '' }}>
+                        Pausa
+                    </button>
                     <button id="btn-paused" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md"
                             {{ $station->status === 'paused' ? 'disabled' : '' }}>
                         Pausa

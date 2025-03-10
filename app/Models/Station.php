@@ -25,7 +25,7 @@ class Station extends Model
     ];
 
     const STATUS_ACTIVE = 'active';   // Disponibile per nuove chiamate
-    const STATUS_BUSY = 'busy';       // NUOVO: Occupato con un cliente
+    const STATUS_BUSY = 'busy';       // Occupato con un cliente
     const STATUS_PAUSED = 'paused';   // In pausa
     const STATUS_CLOSED = 'closed';   // Chiuso
 
@@ -42,6 +42,11 @@ class Station extends Model
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function isBusy(): bool
+    {
+        return $this->status === self::STATUS_BUSY;
     }
     
     public function isPaused(): bool
