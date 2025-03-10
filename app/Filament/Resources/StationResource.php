@@ -116,6 +116,7 @@ class StationResource extends Resource
                             ->label('Nuovo stato')
                             ->options([
                                 'active' => 'Attiva',
+                                'busy' => 'Occupata',
                                 'paused' => 'In pausa',
                                 'closed' => 'Chiusa',
                             ])
@@ -159,6 +160,7 @@ class StationResource extends Resource
                                 ->label('Nuovo stato')
                                 ->options([
                                     'active' => 'Attiva',
+                                    'busy' => 'Occupata',
                                     'paused' => 'In pausa',
                                     'closed' => 'Chiusa',
                                 ])
